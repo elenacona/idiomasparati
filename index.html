@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoundWords – Language Learning App</title>
+<style>
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f13;
+    --bg2: #1a1a24;
+    --bg3: #23232f;
+    --bg4: #2e2e3e;
+    --text: #f0eef8;
+    --text2: #b8b5cc;
+    --text3: #7a7890;
+    --accent: #7c6fcd;
+    --accent2: #9d93e0;
+    --accent-glow: #5a4faa;
+    --green: #3ecf85;
+    --green-dark: #1a7a4a;
+    --green-bg: #0d2e1e;
+    --red: #e05c5c;
+    --red-dark: #8a2020;
+    --red-bg: #2e0d0d;
+    --yellow: #e8c547;
+    --yellow-bg: #2e2608;
+    --blue: #4fa3e0;
+    --blue-bg: #0d1e2e;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --radius-xl: 28px;
+    --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 18px;
+    line-height: 1.6;
+    overflow: hidden;
+  }
+
+  /* ===== APP SHELL ===== */
+  #app {
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ===== SCREENS ===== */
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 24px 24px;
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(40px);
+    transition: opacity var(--transition), transform var(--transition);
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(0);
+  }
+  .screen.exit-left {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+
+  /* ===== TOP BAR ===== */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    flex-shrink: 0;
+  }
+  .app-logo {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  /* ===== PROGRESS BAR ===== */
+  .progress-bar-wrap {
+    height: 6px;
+    background: var(--bg4);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 32px;
+    flex-shrink: 0;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+
+  /* ===== HEADINGS ===== */
+  h1 { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1.25; margin-bottom: 8px; }
+  h2 { font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
+  .subtitle { color: var(--text2); font-size: 16px; margin-bottom: 32px; }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 20px 24px;
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    font-family: var(--font);
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    position: relative;
+    text-align: center;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:focus-visible {
+    outline: 3px solid var(--accent2);
+    outline-offset: 3px;
+  }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+
+  .btn-secondary {
+    background: var(--bg3);
+    color: var(--text);
+    border-color: var(--bg4);
+  }
+  .btn-secondary:hover { background: var(--bg4); border-color: var(--accent); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--accent2);
+    border-color: var(--bg4);
+  }
+  .btn-ghost:hover { background: var(--bg3); }
+
+  .btn-answer {
+    background: var(--bg2);
+    color: var(--text);
+    border-color: var(--bg4);
+    font-size: 20px;
+    padding: 22px 24px;
+    margin-bottom: 14px;
+    border-radius: var(--radius-xl);
+    letter-spacing: 0.01em;
+  }
+  .btn-answer:hover { border-color: var(--accent); background: var(--bg3); }
+  .btn-answer.correct {
+    background: var(--green-bg);
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .btn-answer.incorrect {
+    background: var(--red-bg);
+    border-color: var(--red);
+    color: var(--red);
+  }
+  .btn-answer.disabled {
+    opacity: 0.5;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .btn-icon {
+    font-size: 22px;
+    width: auto;
+    padding: 14px 20px;
+    border-radius: var(--radius-sm);
+    flex: 0;
+  }
+
+  /* ===== REPEAT BUTTON (floating) ===== */
+  #repeat-btn {
+    position: fixed;
+    bottom: 28px;
+    right: 20px;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-size: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(124,111,205,0.4);
+    transition: all var(--transition);
+    z-index: 1000;
+  }
+  #repeat-btn:hover { background: var(--accent2); transform: scale(1.08); }
+  #repeat-btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  #repeat-btn:active { transform: scale(0.95); }
+
+  /* ===== SPEAKING INDICATOR ===== */
+  #speaking-indicator {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 18px;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 2000;
+    pointer-events: none;
+    max-width: 90%;
+    text-align: center;
+  }
+  #speaking-indicator.visible { opacity: 1; }
+  .wave { display: flex; gap: 3px; align-items: center; }
+  .wave span {
+    width: 4px;
+    height: 4px;
+    background: #fff;
+    border-radius: 50%;
+    animation: wave 0.8s ease-in-out infinite;
+  }
+  .wave span:nth-child(2) { animation-delay: 0.15s; }
+  .wave span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes wave {
+    0%, 100% { height: 4px; }
+    50% { height: 14px; border-radius: 2px; }
+  }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--bg4);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .card:hover { border-color: var(--accent); background: var(--bg3); }
+  .card:focus-visible { outline: 3px solid var(--accent2); outline-offset: 3px; }
+
+  .lesson-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .lesson-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+  .lesson-info { flex: 1; }
+  .lesson-title { font-size: 18px; font-weight: 600; color: var(--text); }
+  .lesson-sub { font-size: 14px; color: var(--text2); margin-top: 2px; }
+  .lesson-badge {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 24px;
+    font-weight: 600;
+  }
+  .badge-done { background: var(--green-bg); color: var(--green); }
+  .badge-new { background: var(--blue-bg); color: var(--blue); }
+
+  /* ===== EXERCISE BOX ===== */
+  .exercise-box {
+    background: var(--bg2);
+    border: 1px solid var(--bg4);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 28px;
+    text-align: center;
+  }
+  .exercise-type {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent2);
+    margin-bottom: 12px;
+  }
+  .exercise-prompt {
+    font-size: 20px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .exercise-word {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent2);
+    margin: 16px 0 8px;
+    letter-spacing: 0.02em;
+  }
+
+  /* ===== FEEDBACK BOX ===== */
+  .feedback-box {
+    padding: 18px 20px;
+    border-radius: var(--radius);
+    margin-bottom: 24px;
+    font-size: 17px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.3s;
+  }
+  .feedback-box.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .feedback-box.correct-fb { background: var(--green-bg); border: 1px solid var(--green); color: var(--green); }
+  .feedback-box.incorrect-fb { background: var(--red-bg); border: 1px solid var(--red); color: var(--red); }
+
+  /* ===== STORY BOX ===== */
+  .story-box {
+    background: var(--bg2);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    font-size: 18px;
+    line-height: 1.8;
+    color: var(--text);
+  }
+  .story-highlight { color: var(--accent2); font-weight: 600; }
+
+  /* ===== COMPLETION ===== */
+  .completion-hero {
+    text-align: center;
+    padding: 32px 0 24px;
+  }
+  .completion-icon {
+    font-size: 80px;
+    margin-bottom: 16px;
+    display: block;
+    animation: pop 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+  @keyframes pop {
+    0% { transform: scale(0.5); opacity: 0; }
+    80% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .score-display {
+    background: var(--accent);
+    color: #fff;
+    font-size: 36px;
+    font-weight: 700;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+  .score-label { font-size: 13px; font-weight: 400; opacity: 0.85; }
+
+  /* ===== LISTEN EXERCISE ===== */
+  .listen-btn {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-size: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin: 20px auto;
+    transition: all var(--transition);
+    box-shadow: 0 0 0 0 rgba(124,111,205,0.5);
+    animation: pulse 2.5s infinite;
+  }
+  .listen-btn:hover { transform: scale(1.05); }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(124,111,205,0.5); }
+    70% { box-shadow: 0 0 0 18px rgba(124,111,205,0); }
+    100% { box-shadow: 0 0 0 0 rgba(124,111,205,0); }
+  }
+
+  /* ===== HOME SCREEN LANGUAGES ===== */
+  .lang-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 22px 20px;
+    margin-bottom: 14px;
+  }
+  .lang-flag { font-size: 36px; }
+  .lang-name { font-size: 20px; font-weight: 600; flex: 1; }
+  .lang-status { font-size: 13px; color: var(--text3); }
+
+  /* ===== NAV BUTTONS BOTTOM ===== */
+  .bottom-actions {
+    margin-top: auto;
+    padding-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ===== STEP COUNTER ===== */
+  .step-counter {
+    font-size: 14px;
+    color: var(--text3);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  /* ===== SR ONLY ===== */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* ===== BACK BTN ===== */
+  .back-btn {
+    background: transparent;
+    border: none;
+    color: var(--text2);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    transition: color var(--transition);
+  }
+  .back-btn:hover { color: var(--text); }
+  .back-btn:focus-visible { outline: 2px solid var(--accent2); outline-offset: 2px; }
+
+  /* ===== DIVIDER ===== */
+  .divider {
+    height: 1px;
+    background: var(--bg4);
+    margin: 20px 0;
+  }
+
+  /* ===== TENSE TAG ===== */
+  .tense-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .tense-past { background: var(--yellow-bg); color: var(--yellow); }
+  .tense-present { background: var(--green-bg); color: var(--green); }
+  .tense-future { background: var(--blue-bg); color: var(--blue); }
+
+  /* ===== WELCOME ANIMATION ===== */
+  .welcome-wave {
+    font-size: 52px;
+    text-align: center;
+    margin: 16px 0 24px;
+    animation: wiggle 1.5s ease-in-out;
+  }
+  @keyframes wiggle {
+    0%,100% { transform: rotate(0deg); }
+    25% { transform: rotate(-10deg); }
+    75% { transform: rotate(10deg); }
+  }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div id="app" role="main">
+
+  <!-- SPEAKING INDICATOR -->
+  <div id="speaking-indicator" aria-live="polite" aria-label="Audio playing">
+    <div class="wave"><span></span><span></span><span></span></div>
+    <span id="speaking-text">Playing audio...</span>
+  </div>
+
+  <!-- REPEAT BUTTON (always visible) -->
+  <button id="repeat-btn" aria-label="Repeat audio" title="Repeat audio">
+    🔊
+  </button>
+
+  <!-- ============================================================ -->
+  <!-- SCREEN 1: HOME                                               -->
+  <!-- ============================================================ -->
+  <section id="screen-home" class="screen" role="region" aria-label="Home screen">
+    <div class="top-bar">
+      <div class="app-logo" aria-label="SoundWords app logo">
+        <div class="logo-icon" aria-hidden="true">🎧</div>
+        SoundWords
+      </div>
+    </div>
+
+    <div class="welcome-wave" aria-hidden="true">👋</div>
+    <h1>Welcome!</h1>
+    <p class="subtitle">Choose a language to start learning</p>
+
+    <div role="list" aria-label="Available languages">
+      <div role="listitem">
+        <button
+          class="card lang-card"
+          aria-label="English. Available."
+          onclick="selectLanguage('english')"
+        >
+          <span class="lang-flag" aria-hidden="true">🇬🇧</span>
+          <span class="lang-name">English</span>
+          <span class="lang-status" aria-hidden="true">Available ✓</span>
+        </button>
+      </div>
+      <div role="listitem">
+        <button
+          class="card lang-card"
+          aria-label="Spanish. Coming soon."
+          onclick="comingSoon('Spanish')"
+          style="opacity:0.55;"
+        >
+          <span class="lang-flag" aria-hidden="true">🇪🇸</span>
+          <span class="lang-name">Español</span>
+          <span class="lang-status" aria-hidden="true">Coming soon</span>
+        </button>
+      </div>
+      <div role="listitem">
+        <button
+          class="card lang-card"
+          aria-label="Mandarin Chinese. Coming soon."
+          onclick="comingSoon('Mandarin')"
+          style="opacity:0.55;"
+        >
+          <span class="lang-flag" aria-hidden="true">🇨🇳</span>
+          <span class="lang-name">普通话</span>
+          <span class="lang-status" aria-hidden="true">Coming soon</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SCREEN 2: LESSONS                                            -->
+  <!-- ============================================================ -->
+  <section id="screen-lessons" class="screen" role="region" aria-label="Lessons screen">
+    <div class="top-bar">
+      <button class="back-btn" onclick="goHome()" aria-label="Back to home">
+        ← Back
+      </button>
+      <div class="app-logo" aria-hidden="true">
+        <div class="logo-icon">🎧</div>
+        SoundWords
+      </div>
+    </div>
+
+    <h1>English Lessons</h1>
+    <p class="subtitle">Choose a lesson to begin</p>
+
+    <div class="progress-bar-wrap" role="progressbar" aria-label="Overall progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="lessons-progress-bar">
+      <div class="progress-bar-fill" id="lessons-progress-fill" style="width:0%"></div>
+    </div>
+    <p id="lessons-progress-text" style="font-size:13px; color:var(--text3); margin-top:-20px; margin-bottom:24px;"></p>
+
+    <div role="list" aria-label="Available lessons">
+      <div role="listitem">
+        <button
+          class="card lesson-card"
+          aria-label="Lesson 1: Animals. 6 exercises."
+          onclick="startLesson(1)"
+        >
+          <div class="lesson-icon" aria-hidden="true">🐾</div>
+          <div class="lesson-info">
+            <div class="lesson-title">Lesson 1: Animals</div>
+            <div class="lesson-sub">6 exercises · Listen, identify, speak</div>
+          </div>
+          <span class="lesson-badge badge-new" id="l1-badge">Start</span>
+        </button>
+      </div>
+      <div role="listitem">
+        <button
+          class="card lesson-card"
+          aria-label="Lesson 2: Past, Present, Future. 6 exercises."
+          onclick="startLesson(2)"
+        >
+          <div class="lesson-icon" aria-hidden="true">⏳</div>
+          <div class="lesson-info">
+            <div class="lesson-title">Lesson 2: Verb Tenses</div>
+            <div class="lesson-sub">6 exercises · Listening, matching, story</div>
+          </div>
+          <span class="lesson-badge badge-new" id="l2-badge">Start</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SCREEN 3: EXERCISE                                           -->
+  <!-- ============================================================ -->
+  <section id="screen-exercise" class="screen" role="region" aria-label="Exercise screen">
+    <div class="top-bar">
+      <button class="back-btn" onclick="goLessons()" aria-label="Back to lessons">
+        ← Lessons
+      </button>
+      <span id="ex-lesson-label" style="font-size:14px; color:var(--text3);"></span>
+    </div>
+
+    <div class="progress-bar-wrap" role="progressbar" aria-label="Exercise progress" id="ex-progress-bar">
+      <div class="progress-bar-fill" id="ex-progress-fill" style="width:0%"></div>
+    </div>
+    <p class="step-counter" id="ex-step-counter" aria-live="polite"></p>
+
+    <!-- Dynamic content rendered here -->
+    <div id="ex-content" aria-live="polite" aria-atomic="true"></div>
+
+    <div id="ex-feedback" class="feedback-box" role="alert" aria-live="assertive"></div>
+
+    <div id="ex-actions" class="bottom-actions"></div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- SCREEN 4: COMPLETION                                         -->
+  <!-- ============================================================ -->
+  <section id="screen-completion" class="screen" role="region" aria-label="Completion screen">
+    <div class="top-bar">
+      <div class="app-logo" aria-hidden="true">
+        <div class="logo-icon">🎧</div>
+        SoundWords
+      </div>
+    </div>
+
+    <div class="completion-hero" role="status" aria-live="polite">
+      <span class="completion-icon" id="comp-icon" aria-hidden="true">⭐</span>
+      <h1 id="comp-title">Well done!</h1>
+      <p class="subtitle" id="comp-subtitle">You completed the lesson!</p>
+    </div>
+
+    <div id="comp-score" class="score-display" aria-label="Score">
+      <span id="comp-score-num" style="font-size:38px;">0/0</span>
+      <span class="score-label">correct</span>
+    </div>
+
+    <p id="comp-msg" style="text-align:center; color:var(--text2); font-size:17px; margin-bottom:32px;"></p>
+
+    <div class="bottom-actions">
+      <button class="btn btn-primary" onclick="repeatLesson()" aria-label="Repeat this lesson">
+        🔄 Repeat Lesson
+      </button>
+      <button class="btn btn-secondary" onclick="goLessons()" aria-label="Go back to all lessons">
+        📚 All Lessons
+      </button>
+    </div>
+  </section>
+
+</div><!-- /app -->
+
+<script>
+/* ================================================================
+   SOUNDWORDS – ACCESSIBLE LANGUAGE LEARNING APP
+   Full JS: TTS, navigation, lesson data, exercise engine
+================================================================ */
+
+// ====== STATE ======
+const state = {
+  currentScreen: 'home',
+  currentLesson: null,
+  currentExerciseIndex: 0,
+  score: 0,
+  totalExercises: 0,
+  selectedAnswer: null,
+  answerSubmitted: false,
+  lastAudio: '',
+  progress: { lesson1: 0, lesson2: 0 },
+  completed: { lesson1: false, lesson2: false }
+};
+
+// ====== TTS ======
+let synth = window.speechSynthesis;
+let currentUtterance = null;
+
+function speak(text, onEnd) {
+  if (!synth) return;
+  synth.cancel();
+  state.lastAudio = text;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 0.92;
+  utter.pitch = 1.0;
+  utter.volume = 1.0;
+  utter.lang = 'en-US';
+
+  // pick a clear English voice if available
+  const voices = synth.getVoices();
+  const preferred = voices.find(v => v.lang === 'en-US' && (v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Google')));
+  if (preferred) utter.voice = preferred;
+
+  const indicator = document.getElementById('speaking-indicator');
+  const indicatorText = document.getElementById('speaking-text');
+
+  utter.onstart = () => {
+    indicatorText.textContent = text.length > 40 ? text.slice(0, 38) + '…' : text;
+    indicator.classList.add('visible');
+  };
+  utter.onend = () => {
+    indicator.classList.remove('visible');
+    if (onEnd) onEnd();
+  };
+  utter.onerror = () => {
+    indicator.classList.remove('visible');
+  };
+
+  currentUtterance = utter;
+  synth.speak(utter);
+}
+
+function repeatAudio() {
+  if (state.lastAudio) speak(state.lastAudio);
+}
+
+document.getElementById('repeat-btn').addEventListener('click', repeatAudio);
+document.getElementById('repeat-btn').addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') repeatAudio();
+});
+
+// ensure voices loaded
+synth.addEventListener('voiceschanged', () => {});
+
+// ====== SCREEN NAVIGATION ======
+function showScreen(id, direction = 'forward') {
+  const all = document.querySelectorAll('.screen');
+  const next = document.getElementById(id);
+  all.forEach(s => {
+    if (s.classList.contains('active')) {
+      s.classList.remove('active');
+      s.classList.add('exit-left');
+      setTimeout(() => s.classList.remove('exit-left'), 300);
+    }
+  });
+  setTimeout(() => {
+    next.classList.add('active');
+    const focusTarget = next.querySelector('h1') || next.querySelector('button');
+    if (focusTarget) focusTarget.focus();
+  }, 50);
+  state.currentScreen = id;
+}
+
+// ====== LESSON DATA ======
+const lessons = {
+  1: {
+    title: 'Animals',
+    icon: '🐾',
+    exercises: [
+      // Ex 1: Listen and choose animal
+      {
+        type: 'listen-choose',
+        instruction: 'Listen to the word. Then choose the correct animal.',
+        word: 'Dog',
+        audio: 'Dog. A dog barks and is a loyal pet.',
+        options: [
+          { text: '🐕 Dog', correct: true },
+          { text: '🐈 Cat', correct: false },
+          { text: '🐦 Bird', correct: false }
+        ],
+        correctFeedback: 'Correct! Dog. Dogs are loyal pets that bark.',
+        incorrectFeedback: 'Not quite. The correct answer is Dog. Dogs are loyal pets that bark.'
+      },
+      // Ex 2: Listen and choose
+      {
+        type: 'listen-choose',
+        instruction: 'Listen to the word. Then choose the correct animal.',
+        word: 'Cat',
+        audio: 'Cat. A cat meows and loves to sleep.',
+        options: [
+          { text: '🐕 Dog', correct: false },
+          { text: '🐈 Cat', correct: true },
+          { text: '🐠 Fish', correct: false }
+        ],
+        correctFeedback: 'Correct! Cat. Cats meow and love to sleep.',
+        incorrectFeedback: 'Not quite. The correct answer is Cat. Cats meow and love to sleep.'
+      },
+      // Ex 3: Listen and choose
+      {
+        type: 'listen-choose',
+        instruction: 'Listen to the word. Then choose the correct animal.',
+        word: 'Bird',
+        audio: 'Bird. A bird has wings and can fly.',
+        options: [
+          { text: '🐦 Bird', correct: true },
+          { text: '🐘 Elephant', correct: false },
+          { text: '🐈 Cat', correct: false }
+        ],
+        correctFeedback: 'Correct! Bird. Birds have wings and can fly.',
+        incorrectFeedback: 'Not quite. The correct answer is Bird. Birds have wings and can fly.'
+      },
+      // Ex 4: Identify animal by sound description
+      {
+        type: 'listen-choose',
+        instruction: 'Listen to the description. Which animal makes this sound?',
+        word: 'Meow',
+        audio: 'This animal says: Meow. Which animal is it?',
+        options: [
+          { text: '🐕 Dog', correct: false },
+          { text: '🐈 Cat', correct: true },
+          { text: '🐓 Rooster', correct: false }
+        ],
+        correctFeedback: 'Excellent! Cats say meow.',
+        incorrectFeedback: 'Not quite. Cats say meow.'
+      },
+      // Ex 5: Identify by description
+      {
+        type: 'listen-choose',
+        instruction: 'Listen to the clue. Which animal am I describing?',
+        word: 'I have wings',
+        audio: 'I have wings and feathers. I can fly and I sing in the morning. What am I?',
+        options: [
+          { text: '🐟 Fish', correct: false },
+          { text: '🐦 Bird', correct: true },
+          { text: '🐕 Dog', correct: false }
+        ],
+        correctFeedback: 'Fantastic! Birds have wings, feathers, and can fly.',
+        incorrectFeedback: 'Not quite. The answer is Bird. Birds have wings, feathers, and can fly.'
+      },
+      // Ex 6: Speaking practice (simulated)
+      {
+        type: 'speaking',
+        instruction: 'Speaking practice! Repeat this word out loud.',
+        word: 'Elephant',
+        audio: 'Great job with animals! Now let us practice speaking. Repeat the word: Elephant. El-e-phant.',
+        options: [
+          { text: '✓ I said it!', correct: true },
+          { text: '🔄 Hear it again', correct: null }
+        ],
+        correctFeedback: 'Amazing! You practiced saying Elephant. Well done!',
+        incorrectFeedback: ''
+      }
+    ]
+  },
+
+  2: {
+    title: 'Verb Tenses',
+    icon: '⏳',
+    exercises: [
+      // Ex 1: Listening (no interaction needed — auto-advance)
+      {
+        type: 'listening-only',
+        instruction: 'Listening exercise. Just listen carefully.',
+        content: [
+          { tense: 'present', tag: 'NOW', sentence: 'I eat pizza.' },
+          { tense: 'past', tag: 'BEFORE', sentence: 'I ate pizza.' },
+          { tense: 'future', tag: 'AFTER', sentence: 'I will eat pizza.' }
+        ],
+        audio: 'Listen carefully to these three sentences about time. First: I eat pizza. This is happening NOW. Second: I ate pizza. This happened BEFORE, in the past. Third: I will eat pizza. This will happen AFTER, in the future.'
+      },
+      // Ex 2: Identify time
+      {
+        type: 'listen-choose',
+        instruction: 'Listen to the sentence. Does it happen before, now, or after?',
+        word: '"I ate breakfast."',
+        audio: 'I ate breakfast. Is this before, now, or after?',
+        options: [
+          { text: '⏮ Before (Past)', correct: true },
+          { text: '▶ Now (Present)', correct: false },
+          { text: '⏭ After (Future)', correct: false }
+        ],
+        correctFeedback: 'Correct! "I ate" uses the past tense. It happened before.',
+        incorrectFeedback: 'Not quite. "I ate" uses the past tense. It happened BEFORE.'
+      },
+      // Ex 3: Identify time
+      {
+        type: 'listen-choose',
+        instruction: 'Listen to the sentence. Does it happen before, now, or after?',
+        word: '"I will sleep."',
+        audio: 'I will sleep. Is this before, now, or after?',
+        options: [
+          { text: '⏮ Before (Past)', correct: false },
+          { text: '▶ Now (Present)', correct: false },
+          { text: '⏭ After (Future)', correct: true }
+        ],
+        correctFeedback: 'Correct! "I will sleep" uses the future tense. It will happen after.',
+        incorrectFeedback: 'Not quite. "I will sleep" uses the future tense. It will happen AFTER.'
+      },
+      // Ex 4: Compare sentences
+      {
+        type: 'compare-choose',
+        instruction: 'Which sentence talks about RIGHT NOW?',
+        audio: 'Which sentence talks about right now, the present? Choose carefully.',
+        options: [
+          { text: 'I played football.', correct: false },
+          { text: 'I play football.', correct: true },
+          { text: 'I will play football.', correct: false }
+        ],
+        correctFeedback: 'Correct! "I play" is present tense — it happens right now.',
+        incorrectFeedback: 'Not quite. "I play football" is present tense — right now. "Played" is past, "will play" is future.'
+      },
+      // Ex 5: Mini story
+      {
+        type: 'story',
+        instruction: 'Listen to the story.',
+        storyParts: [
+          { tense: 'past', sentence: 'Yesterday I ate pizza.' },
+          { tense: 'present', sentence: 'Today I eat salad.' },
+          { tense: 'future', sentence: 'Tomorrow I will eat pasta.' }
+        ],
+        audio: 'Listen to this short story about food and time. Yesterday I ate pizza — that was in the past. Today I eat salad — that is the present. Tomorrow I will eat pasta — that will be in the future.'
+      },
+      // Ex 6: Story question
+      {
+        type: 'listen-choose',
+        instruction: 'Story question! What did the person eat yesterday?',
+        word: 'What was eaten yesterday?',
+        audio: 'Remember the story. Yesterday, the person ate what? Was it pizza, salad, or pasta?',
+        options: [
+          { text: '🍕 Pizza', correct: true },
+          { text: '🥗 Salad', correct: false },
+          { text: '🍝 Pasta', correct: false }
+        ],
+        correctFeedback: 'Excellent! Yesterday they ate pizza — past tense!',
+        incorrectFeedback: 'Not quite. Yesterday they ate pizza — past tense! Salad is today, pasta is tomorrow.'
+      }
+    ]
+  }
+};
+
+// ====== HOME ======
+function goHome() {
+  showScreen('screen-home');
+  speak('Home screen. Welcome to SoundWords. Choose a language to start learning.');
+}
+
+function selectLanguage(lang) {
+  if (lang === 'english') {
+    speak('English selected. Now choose a lesson.');
+    showLessonsScreen();
+  }
+}
+
+function comingSoon(lang) {
+  speak(lang + ' is coming soon! For now, please choose English.');
+}
+
+// ====== LESSONS ======
+function showLessonsScreen() {
+  updateLessonBadges();
+  showScreen('screen-lessons');
+  const pct = (
+    (state.completed.lesson1 ? 1 : 0) +
+    (state.completed.lesson2 ? 1 : 0)
+  ) / 2 * 100;
+  document.getElementById('lessons-progress-fill').style.width = pct + '%';
+  document.getElementById('lessons-progress-text').textContent =
+    `${Math.round(pct)}% complete`;
+
+  speak('Lessons screen. You have two lessons. Lesson 1: Animals. Lesson 2: Verb Tenses. Tap a lesson to begin.');
+}
+
+function goLessons() {
+  showLessonsScreen();
+}
+
+function updateLessonBadges() {
+  document.getElementById('l1-badge').textContent = state.completed.lesson1 ? '✓ Done' : 'Start';
+  document.getElementById('l1-badge').className = 'lesson-badge ' + (state.completed.lesson1 ? 'badge-done' : 'badge-new');
+  document.getElementById('l2-badge').textContent = state.completed.lesson2 ? '✓ Done' : 'Start';
+  document.getElementById('l2-badge').className = 'lesson-badge ' + (state.completed.lesson2 ? 'badge-done' : 'badge-new');
+}
+
+// ====== EXERCISE ENGINE ======
+function startLesson(lessonNum) {
+  state.currentLesson = lessonNum;
+  state.currentExerciseIndex = 0;
+  state.score = 0;
+  state.totalExercises = lessons[lessonNum].exercises.length;
+  state.answerSubmitted = false;
+  state.selectedAnswer = null;
+
+  const lesson = lessons[lessonNum];
+  document.getElementById('ex-lesson-label').textContent = `Lesson ${lessonNum}: ${lesson.title}`;
+
+  showScreen('screen-exercise');
+  renderExercise();
+}
+
+function renderExercise() {
+  const lesson = lessons[state.currentLesson];
+  const ex = lesson.exercises[state.currentExerciseIndex];
+  const total = lesson.exercises.length;
+  const idx = state.currentExerciseIndex;
+
+  state.answerSubmitted = false;
+  state.selectedAnswer = null;
+
+  // Progress bar
+  const pct = (idx / total) * 100;
+  document.getElementById('ex-progress-fill').style.width = pct + '%';
+  document.getElementById('ex-step-counter').textContent =
+    `Exercise ${idx + 1} of ${total}`;
+
+  // Clear feedback
+  const feedbackEl = document.getElementById('ex-feedback');
+  feedbackEl.className = 'feedback-box';
+  feedbackEl.textContent = '';
+
+  // Render content and actions based on type
+  if (ex.type === 'listen-choose' || ex.type === 'compare-choose') {
+    renderListenChoose(ex);
+  } else if (ex.type === 'listening-only') {
+    renderListeningOnly(ex);
+  } else if (ex.type === 'story') {
+    renderStory(ex);
+  } else if (ex.type === 'speaking') {
+    renderSpeaking(ex);
+  }
+
+  // Auto-play audio
+  setTimeout(() => speak(ex.audio), 400);
+}
+
+function renderListenChoose(ex) {
+  const isCompare = ex.type === 'compare-choose';
+  let html = `
+    <div class="exercise-box">
+      <div class="exercise-type">${isCompare ? 'Compare & Choose' : 'Listen & Choose'}</div>
+      <p class="exercise-prompt">${ex.instruction}</p>
+      ${ex.word ? `<div class="exercise-word" aria-label="${ex.word}">${ex.word}</div>` : ''}
+    </div>
+    <div role="group" aria-label="Answer options">
+  `;
+
+  ex.options.forEach((opt, i) => {
+    html += `
+      <button
+        class="btn btn-answer"
+        id="opt-${i}"
+        aria-label="Option ${i+1}: ${opt.text}"
+        onclick="selectAnswer(${i})"
+      >${opt.text}</button>
+    `;
+  });
+  html += `</div>`;
+
+  document.getElementById('ex-content').innerHTML = html;
+  document.getElementById('ex-actions').innerHTML = `
+    <button class="btn btn-ghost" onclick="repeatAudio()" aria-label="Hear the question again" style="margin-bottom:8px;">
+      🔊 Hear Again
+    </button>
+  `;
+}
+
+function renderListeningOnly(ex) {
+  let html = `
+    <div class="exercise-box">
+      <div class="exercise-type">Listening</div>
+      <p class="exercise-prompt">${ex.instruction}</p>
+    </div>
+    <button class="listen-btn" onclick="repeatAudio()" aria-label="Play audio again">🔊</button>
+    <div style="margin-top:20px;">
+  `;
+
+  ex.content.forEach(item => {
+    const tagClass = item.tense === 'present' ? 'tense-present' :
+                     item.tense === 'past' ? 'tense-past' : 'tense-future';
+    html += `
+      <div style="background:var(--bg2); border:1px solid var(--bg4); border-radius:var(--radius); padding:16px 20px; margin-bottom:12px;">
+        <span class="tense-tag ${tagClass}">${item.tag}</span>
+        <p style="font-size:20px; font-weight:600; color:var(--text); margin-top:6px;">${item.sentence}</p>
+      </div>
+    `;
+  });
+  html += `</div>`;
+
+  document.getElementById('ex-content').innerHTML = html;
+  document.getElementById('ex-actions').innerHTML = `
+    <button class="btn btn-ghost" onclick="repeatAudio()" aria-label="Hear the audio again" style="margin-bottom:12px;">
+      🔊 Hear Again
+    </button>
+    <button class="btn btn-primary" onclick="nextExercise()" aria-label="Continue to next exercise">
+      Continue →
+    </button>
+  `;
+}
+
+function renderStory(ex) {
+  let html = `
+    <div class="exercise-box">
+      <div class="exercise-type">Mini Story</div>
+      <p class="exercise-prompt">${ex.instruction}</p>
+    </div>
+    <div class="story-box" aria-label="Story">
+  `;
+
+  ex.storyParts.forEach(part => {
+    const tagClass = part.tense === 'present' ? 'tense-present' :
+                     part.tense === 'past' ? 'tense-past' : 'tense-future';
+    const tag = part.tense === 'past' ? 'PAST' : part.tense === 'present' ? 'PRESENT' : 'FUTURE';
+    html += `
+      <div style="margin-bottom:16px;">
+        <span class="tense-tag ${tagClass}">${tag}</span>
+        <p style="font-size:19px; margin-top:4px;" class="story-highlight">${part.sentence}</p>
+      </div>
+    `;
+  });
+  html += `</div>`;
+
+  document.getElementById('ex-content').innerHTML = html;
+  document.getElementById('ex-actions').innerHTML = `
+    <button class="btn btn-ghost" onclick="repeatAudio()" aria-label="Hear the story again" style="margin-bottom:12px;">
+      🔊 Hear Story Again
+    </button>
+    <button class="btn btn-primary" onclick="nextExercise()" aria-label="Continue to next exercise">
+      Continue →
+    </button>
+  `;
+}
+
+function renderSpeaking(ex) {
+  let html = `
+    <div class="exercise-box">
+      <div class="exercise-type">Speaking Practice</div>
+      <p class="exercise-prompt">${ex.instruction}</p>
+      <div class="exercise-word" aria-label="${ex.word}">${ex.word}</div>
+      <p style="color:var(--text2); font-size:15px; margin-top:8px;">Say the word out loud!</p>
+    </div>
+    <button class="listen-btn" onclick="repeatAudio()" aria-label="Hear the word again" style="margin-bottom:8px;">🔊</button>
+    <div role="group" aria-label="Speaking options">
+  `;
+
+  ex.options.forEach((opt, i) => {
+    html += `
+      <button
+        class="btn btn-answer"
+        id="opt-${i}"
+        aria-label="${opt.text}"
+        onclick="selectAnswer(${i})"
+      >${opt.text}</button>
+    `;
+  });
+  html += `</div>`;
+
+  document.getElementById('ex-content').innerHTML = html;
+  document.getElementById('ex-actions').innerHTML = `
+    <button class="btn btn-ghost" onclick="repeatAudio()" aria-label="Hear the word again">
+      🔊 Hear Again
+    </button>
+  `;
+}
+
+// ====== ANSWER SELECTION ======
+function selectAnswer(index) {
+  if (state.answerSubmitted) return;
+
+  const lesson = lessons[state.currentLesson];
+  const ex = lesson.exercises[state.currentExerciseIndex];
+  const opt = ex.options[index];
+
+  // Special: "Hear it again" button in speaking
+  if (opt.correct === null) {
+    repeatAudio();
+    return;
+  }
+
+  state.answerSubmitted = true;
+  state.selectedAnswer = index;
+
+  const isCorrect = opt.correct;
+  if (isCorrect) state.score++;
+
+  // Style buttons
+  ex.options.forEach((o, i) => {
+    const btn = document.getElementById('opt-' + i);
+    if (!btn) return;
+    if (o.correct === null) {
+      btn.classList.add('disabled');
+    } else if (o.correct) {
+      btn.classList.add('correct');
+    } else if (i === index && !isCorrect) {
+      btn.classList.add('incorrect');
+    } else {
+      btn.classList.add('disabled');
+    }
+  });
+
+  // Feedback
+  const feedbackEl = document.getElementById('ex-feedback');
+  const msg = isCorrect ? ex.correctFeedback : ex.incorrectFeedback;
+  feedbackEl.innerHTML = (isCorrect ? '✓ ' : '✗ ') + msg;
+  feedbackEl.className = 'feedback-box visible ' + (isCorrect ? 'correct-fb' : 'incorrect-fb');
+  feedbackEl.setAttribute('aria-label', msg);
+
+  // Speak feedback
+  speak(msg);
+
+  // Show next button
+  document.getElementById('ex-actions').innerHTML = `
+    <button class="btn btn-ghost" onclick="repeatAudio()" aria-label="Hear the question again" style="margin-bottom:12px;">
+      🔊 Hear Again
+    </button>
+    <button class="btn btn-primary" onclick="nextExercise()" aria-label="Continue to next exercise">
+      Continue →
+    </button>
+  `;
+  document.querySelector('.btn-primary').focus();
+}
+
+// ====== NEXT EXERCISE / COMPLETION ======
+function nextExercise() {
+  const lesson = lessons[state.currentLesson];
+  state.currentExerciseIndex++;
+
+  if (state.currentExerciseIndex >= lesson.exercises.length) {
+    showCompletion();
+  } else {
+    renderExercise();
+  }
+}
+
+function showCompletion() {
+  const lessonKey = 'lesson' + state.currentLesson;
+  state.completed[lessonKey] = true;
+
+  const score = state.score;
+  const total = state.totalExercises;
+  const pct = Math.round((score / total) * 100);
+
+  document.getElementById('comp-score-num').textContent = score + '/' + total;
+
+  let icon = '⭐', title = 'Well done!', msg = '';
+  if (pct === 100) {
+    icon = '🏆'; title = 'Perfect score!';
+    msg = 'Incredible! You got every answer right. You are a star!';
+  } else if (pct >= 70) {
+    icon = '🎉'; title = 'Great job!';
+    msg = 'You did really well! Keep practicing to reach a perfect score.';
+  } else {
+    icon = '💪'; title = 'Keep going!';
+    msg = 'Good effort! Try again to improve your score. You can do it!';
+  }
+
+  document.getElementById('comp-icon').textContent = icon;
+  document.getElementById('comp-title').textContent = title;
+  document.getElementById('comp-subtitle').textContent =
+    `Lesson ${state.currentLesson}: ${lessons[state.currentLesson].title}`;
+  document.getElementById('comp-msg').textContent = msg;
+
+  showScreen('screen-completion');
+  const speechText = `${title} You scored ${score} out of ${total}. ${msg}`;
+  speak(speechText);
+}
+
+function repeatLesson() {
+  startLesson(state.currentLesson);
+}
+
+// ====== KEYBOARD NAVIGATION ======
+document.addEventListener('keydown', e => {
+  // R = repeat audio
+  if (e.key === 'r' || e.key === 'R') repeatAudio();
+  // Escape = go back
+  if (e.key === 'Escape') {
+    if (state.currentScreen === 'screen-exercise') goLessons();
+    else if (state.currentScreen === 'screen-lessons') goHome();
+    else if (state.currentScreen === 'screen-completion') goLessons();
+  }
+  // 1/2/3 = select option in exercise
+  if (['1','2','3'].includes(e.key) && state.currentScreen === 'screen-exercise') {
+    const idx = parseInt(e.key) - 1;
+    const btn = document.getElementById('opt-' + idx);
+    if (btn) btn.click();
+  }
+});
+
+// ====== INIT ======
+(function init() {
+  showScreen('screen-home');
+  // delay to let voices load
+  setTimeout(() => {
+    speak('Welcome to SoundWords! Your audio-first language learning app. Choose a language to start learning. Press R at any time to repeat audio.');
+  }, 600);
+})();
+</script>
+</body>
+</html>
